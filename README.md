@@ -47,6 +47,77 @@ The schematic and board design were both drawn using
 [KiCad](https://www.kicad.org/), an open source electronic design
 automation suite.
 
+## Firmware
+
+### Build Environment
+
+#### Toolchain and SDK
+
+You will need to setup both the toolchain for the ESP8266 as well as the
+[ESP8266 RTOS SDK](https://github.com/espressif/ESP8266_RTOS_SDK).
+Espressif provide documentation for the setup of both components.
+
+* [Toolchain Setup](https://docs.espressif.com/projects/esp8266-rtos-sdk/en/latest/get-started/index.html#setup-toolchain)
+* [SDK Setup](https://docs.espressif.com/projects/esp8266-rtos-sdk/en/latest/get-started/index.html#get-esp8266-rtos-sdk)
+
+#### Environment Variables
+
+Two environment variables are used to tell `esptool.py` (the tool used
+by the SDK to flash your firmware to the ESP8266) where to flash to and
+at what speed.
+
+* `ESPPORT` - This is the path to the device to program, e.g.
+  `/dev/ttyUSB0`.
+* `ESPBAUD` - Baud rate to communicate at. Should normally be set to
+  `115200` for flashing.
+
+If you encounter an error such as below when running `make flash` you
+probably need to set the `ESPPORT` environment variable.
+
+```
+A fatal error occurred: Cannot find target port named 'None'.
+CMake Error at run_esptool.cmake:45 (message):
+  esptool.py failed
+```
+#### Other requirements
+
+You will also need CMake and Make installed to compile and flash the
+firmware.
+
+### Build and flash
+
+#### Initialize build system
+
+First create a build directory in src and cd into it.
+
+```
+mkdir build
+cd build
+```
+
+Then you can run CMake to generate the build system.
+
+```
+cmake ../src
+```
+
+#### Compile and upload
+
+To compile the firmware run:
+
+```
+make
+```
+
+And to upload to the board run:
+
+```
+make flash
+```
+
+`make flash` will also compile the firmware before it uploads it to the
+board, so you can omit running `make` separately if you like.
+
 ## Licence
 This repo uses the [REUSE](https://reuse.software) standard in order to
 communicate the correct licence for the file. For those unfamiliar with
