@@ -8,6 +8,8 @@
 #include "freertos/task.h"
 #include "sdkconfig.h"
 
+#include "sensor/aht10.hpp"
+
 void show_startup_info()
 {
     const char tag[] = "STARTUP";
@@ -58,13 +60,12 @@ void show_startup_info()
 extern "C" void app_main()
 {
     show_startup_info();
+    AHT10 sensor = AHT10(GPIO_NUM_0, GPIO_NUM_2, I2C_NUM_0, 0x38);
 
-    for (int i = 10; i >= 0; i--)
+    while (1)
     {
-        ESP_LOGI("app_main", "Restarting in %d seconds...\n", i);
+        aht10_measurement_t res = {};
+        sensor.Measure(&res);
         vTaskDelay(1000 / portTICK_PERIOD_MS);
     }
-    ESP_LOGI("app_main", "Restarting now.\n");
-    fflush(stdout);
-    esp_restart();
 }
