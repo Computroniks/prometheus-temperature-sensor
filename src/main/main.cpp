@@ -4,68 +4,115 @@
 #include "esp_log.h"
 #include "esp_spi_flash.h"
 #include "esp_system.h"
+#include "esp_spiffs.h"
+
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "sdkconfig.h"
 
 #include "sensor/aht10.hpp"
 
+#define SPIFFS_MAX_FILES 3
+
+static const char *TAG = "main";
+
 void show_startup_info()
 {
-    const char tag[] = "STARTUP";
     // Firmware info
-    ESP_LOGI(tag, "%s %s", PROJECT_NAME, PROJECT_VERSION);
-    ESP_LOGI(tag, "Compiled %s %s", __DATE__, __TIME__);
-    ESP_LOGI(tag, "Repository %s\n", PROJECT_REPO);
+    ESP_LOGI(TAG, "%s %s", PROJECT_NAME, PROJECT_VERSION);
+    ESP_LOGI(TAG, "Compiled %s %s", __DATE__, __TIME__);
+    ESP_LOGI(TAG, "Repository %s", PROJECT_REPO);
 
     // IC Info
     esp_chip_info_t chip;
     esp_chip_info(&chip);
     ESP_LOGI(
-        tag, "Model: %s",
+        TAG, "Model: %s",
         (chip.model == CHIP_ESP8266) ? "ESP8266" : "ESP32");
-    ESP_LOGI(tag, "Silicon revision: %d", chip.revision);
-    ESP_LOGI(tag, "Cores: %d", chip.cores);
-    ESP_LOGI(tag, "Crystal: %dMHz\n", CRYSTAL_USED);
+    ESP_LOGI(TAG, "Silicon revision: %d", chip.revision);
+    ESP_LOGI(TAG, "Cores: %d", chip.cores);
+    ESP_LOGI(TAG, "Crystal: %dMHz", CRYSTAL_USED);
 
     // Chip features
-    ESP_LOGI(tag, "Features:");
+    ESP_LOGI(TAG, "Features:");
     ESP_LOGI(
-        tag, "Embedded flash: %s",
+        TAG, "Embedded flash: %s",
         (chip.features & CHIP_FEATURE_EMB_FLASH) ? "Yes" : "No");
     ESP_LOGI(
-        tag, "2.4GHz WiFi: %s",
+        TAG, "2.4GHz WiFi: %s",
         (chip.features & CHIP_FEATURE_WIFI_BGN) ? "Yes" : "No");
     ESP_LOGI(
-        tag, "Bluetooth LE: %s",
+        TAG, "Bluetooth LE: %s",
         (chip.features & CHIP_FEATURE_BLE) ? "Yes" : "No");
     ESP_LOGI(
-        tag, "Bluetooth Classic: %s\n",
+        TAG, "Bluetooth Classic: %s",
         (chip.features & CHIP_FEATURE_BT) ? "Yes" : "No");
 
     // MAC addresses
     unsigned char mac[8];
     esp_efuse_mac_get_default(mac);
     ESP_LOGI(
-        tag, "MAC Address: %02x:%02x:%02x:%02x:%02x:%02x",
+        TAG, "MAC Address: %02x:%02x:%02x:%02x:%02x:%02x",
         mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
     // Flash Info
     ESP_LOGI(
-        tag, "%dMB %s flash\n",
+        TAG, "%dMB %s flash",
         spi_flash_get_chip_size() / (1024 * 1024),
         (chip.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
+}
+
+esp_err_t init_spiffs()
+{
+    ESP_LOGI(TAG, "Initialising SPIFFS file system");
+
+    esp_vfs_spiffs_conf_t conf = {
+        .base_path = "/spiffs",
+        .partition_label = NULL,
+        .max_files = SPIFFS_MAX_FILES,
+        .format_if_mount_failed = true,
+    };
+
+    esp_err_t ret = esp_vfs_spiffs_register(&conf);
+    if (ret != ESP_OK)
+    {
+        switch (ret)
+        {
+        case ESP_FAIL:
+            ESP_LOGE(TAG, "ESP_FAIL: Failed to mount or format file system");
+            break;
+        case ESP_ERR_NOT_FOUND:
+            ESP_LOGE(TAG, "ESP_ERR_NOT_FOUND: Could not find SPIFFS partition");
+            break;
+        default:
+            ESP_LOGE(TAG, "Failed to initialise SPIFFS (%s)", esp_err_to_name(ret));
+            break;
+        }
+        return ret;
+    }
+
+    size_t total = 0, used = 0;
+    ret = esp_spiffs_info(NULL, &total, &used);
+    if (ret != ESP_OK)
+    {
+        ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret));
+        return ret;
+    }
+    else
+    {
+        ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
+    }
+
+    return ESP_OK;
 }
 
 extern "C" void app_main()
 {
     show_startup_info();
+    init_spiffs();
+
     AHT10 sensor = AHT10(GPIO_NUM_0, GPIO_NUM_2, I2C_NUM_0, 0x38);
 
-    while (1)
-    {
-        aht10_measurement_t res = {};
-        sensor.Measure(&res);
-        vTaskDelay(1000 / portTICK_PERIOD_MS);
-    }
+    aht10_measurement_t res = {};
+    sensor.Measure(&res);
 }
