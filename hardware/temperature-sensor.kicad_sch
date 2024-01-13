@@ -3007,7 +3007,7 @@
     (property "Reference" "J3" (at 104.775 24.13 0)
       (effects (font (size 1.27 1.27)))
     )
-    (property "Value" "Conn_01x02_Pin" (at 104.775 26.67 0)
+    (property "Value" "JST S2B-PH-K-S" (at 104.775 26.67 0)
       (effects (font (size 1.27 1.27)))
     )
     (property "Footprint" "Connector_JST:JST_PH_S2B-PH-K_1x02_P2.00mm_Horizontal" (at 104.14 29.21 0)
