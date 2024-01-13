@@ -26,7 +26,7 @@ esp_err_t AHT10::Read(uint8_t *data, size_t len)
     int ret = i2c_master_cmd_begin(port_, cmd, 1000 / portTICK_RATE_MS);
     i2c_cmd_link_delete(cmd);
 
-    ESP_LOGD(TAG_, "Finished reading data. Got response %x", ret);
+    ESP_LOGD(TAG_, "Finished reading data. Got response %s", esp_err_to_name(ret));
     CheckResponseCode(ret);
     return ret;
 }
@@ -44,7 +44,7 @@ esp_err_t AHT10::Write(uint8_t *data, size_t len)
     int ret = i2c_master_cmd_begin(port_, cmd, 1000 / portTICK_RATE_MS);
     i2c_cmd_link_delete(cmd);
 
-    ESP_LOGD(TAG_, "Finished writing. Response code was %x", ret);
+    ESP_LOGD(TAG_, "Finished writing. Response code was %s", esp_err_to_name(ret));
     CheckResponseCode(ret);
     return ret;
 }
@@ -53,7 +53,7 @@ void AHT10::CheckResponseCode(esp_err_t code)
 {
     if (code != ESP_OK)
     {
-        ESP_LOGW(TAG_, "Response code was not ESP_OK, got %x", code);
+        ESP_LOGW(TAG_, "Response code was not ESP_OK, got %s", esp_err_to_name(code));
     }
 }
 
