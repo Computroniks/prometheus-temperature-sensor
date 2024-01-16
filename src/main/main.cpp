@@ -12,6 +12,7 @@
 #include "freertos/task.h"
 #include "sdkconfig.h"
 
+#include "config/uart.hpp"
 #include "sensor/aht10.hpp"
 
 #define SPIFFS_MAX_FILES 3
@@ -117,7 +118,7 @@ esp_err_t init_spiffs()
         ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret));
         return ret;
     }
-    else
+
     {
         ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
     }
@@ -143,6 +144,12 @@ esp_err_t init_spiffs()
     return ESP_OK;
 }
 
+void uart_task(void *arg)
+{
+    UART uart = UART(74800);
+    uart.Listen();
+}
+
 extern "C" void app_main()
 {
     show_startup_info();
@@ -152,4 +159,6 @@ extern "C" void app_main()
 
     aht10_measurement_t res = {};
     sensor.Measure(&res);
+
+    xTaskCreate(uart_task, "uart_listen", 2048, NULL, 10, NULL);
 }
