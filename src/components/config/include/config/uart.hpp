@@ -13,8 +13,9 @@
 typedef enum
 {
     UART_CMD_RESET = 0x01,
-    UART_CMD_CONFIG_SET_WIFI = 0x11,
+    UART_CMD_CONFIG_SET_WIFI_SSID = 0x11,
     UART_CMD_CONFIG_GET_WIFI_SSID = 0x12,
+    UART_CMD_CONFIG_SET_WIFI_AUTH = 0x13,
 } uart_cmd_t;
 
 typedef enum
@@ -44,14 +45,16 @@ private:
      *
      * @return uart_err_t
      */
-    uart_err_t SetWifiSSID();
+    uart_err_t SetWiFiSSID();
 
     /**
      * @brief Get the currently configured WiFi SSID
      *
      * @return uart_err_t
      */
-    uart_err_t GetWifiSSID();
+    uart_err_t GetWiFiSSID();
+
+    uart_err_t SetWiFiKey();
 
 public:
     /**

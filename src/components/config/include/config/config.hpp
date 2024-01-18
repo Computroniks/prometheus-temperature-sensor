@@ -24,9 +24,18 @@ class Config
 {
 private:
     const char *TAG_ = "config";
-    const char *wifi_config_path_ = "/spiffs/wificonfig";
+    const char *ssid_path_ = "/spiffs/ssid";
+    const char *wpa_key_path_ = "/spiffs/wpa_key";
     const char *basic_auth_config_path_ = "/spiffs/basicauth";
     const char *access_control_config_path_ = "/spiffs/accesscontrol";
+
+    /**
+     * @brief Ensure that the given file exists
+     *
+     * @param filename File to check
+     * @return esp_err_t
+     */
+    esp_err_t EnsureFile(const char *filename);
 
 public:
     /**
@@ -35,16 +44,15 @@ public:
      * @param ssid SSID to connect to
      * @return esp_err_t
      */
-    esp_err_t SetWiFi(char *ssid);
+    esp_err_t SetWiFiSSID(char *ssid);
 
     /**
-     * @brief Set SSID and key for WPA Personal WiFi network
+     * @brief Set key for WPA Personal WiFi network
      *
-     * @param ssid SSID to connect to
      * @param key Key to use for authentication
      * @return esp_err_t
      */
-    esp_err_t SetWiFi(char *ssid, char *key);
+    esp_err_t SetWiFiKey(char *key);
 
     /**
      * @brief Retrieve WiFi config
@@ -53,6 +61,8 @@ public:
      * @return esp_err_t
      */
     esp_err_t GetWiFi(config_wifi_t *config);
+
+    Config();
 };
 
 #endif // CONFIG_CONFIG_H_

@@ -1,8 +1,6 @@
 // SPDX-FileCopyrightText: 2023-2024 Sidings Media <contact@sidingsmedia.com>
 // SPDX-License-Identifier: MIT
 
-#include <sys/stat.h>
-
 #include "esp_log.h"
 #include "esp_spi_flash.h"
 #include "esp_system.h"
@@ -15,7 +13,7 @@
 #include "config/uart.hpp"
 #include "sensor/aht10.hpp"
 
-#define SPIFFS_MAX_FILES 3
+#define SPIFFS_MAX_FILES 4
 
 static const char *TAG = "main";
 
@@ -65,23 +63,6 @@ void show_startup_info()
         (chip.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
 }
 
-esp_err_t ensure_file(char *filename)
-{
-    struct stat st;
-    if (stat(filename, &st) != 0)
-    {
-        ESP_LOGI(TAG, "%s does not exist. Creating it", filename);
-        FILE *f = fopen(filename, "w");
-        if (f == NULL)
-        {
-            ESP_LOGE(TAG, "Failed to create file");
-            return ESP_FAIL;
-        }
-        fclose(f);
-    }
-    return ESP_OK;
-}
-
 esp_err_t init_spiffs()
 {
     ESP_LOGI(TAG, "Initialising SPIFFS file system");
@@ -121,24 +102,6 @@ esp_err_t init_spiffs()
 
     {
         ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
-    }
-
-    ret = ensure_file("/spiffs/wificonfig");
-    if (ret != ESP_OK)
-    {
-        return ret;
-    }
-
-    ret = ensure_file("/spiffs/basicauth");
-    if (ret != ESP_OK)
-    {
-        return ret;
-    }
-
-    ret = ensure_file("/spiffs/accesscontrol");
-    if (ret != ESP_OK)
-    {
-        return ret;
     }
 
     return ESP_OK;

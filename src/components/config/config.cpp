@@ -1,22 +1,40 @@
 // SPDX-FileCopyrightText: 2024 Sidings Media <contact@sidingsmedia.com>
 // SPDX-License-Identifier: MIT
 
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
+#include <sys/stat.h>
 
 #include "esp_err.h"
 #include "esp_log.h"
 
 #include "config/config.hpp"
 
-esp_err_t Config::SetWiFi(char *ssid)
+esp_err_t Config::EnsureFile(const char *filename)
+{
+    struct stat st;
+    if (stat(filename, &st) != 0)
+    {
+        ESP_LOGI(TAG_, "%s does not exist. Creating it", filename);
+        FILE *f = fopen(filename, "w");
+        if (f == NULL)
+        {
+            ESP_LOGE(TAG_, "Failed to create file");
+            return ESP_FAIL;
+        }
+        fclose(f);
+    }
+    return ESP_OK;
+}
+
+esp_err_t Config::SetWiFiSSID(char *ssid)
 {
     ESP_LOGD(TAG_, "Setting SSID to %s", ssid);
-    FILE *f = fopen(wifi_config_path_, "w");
+    FILE *f = fopen(ssid_path_, "w");
     if (f == NULL)
     {
-        ESP_LOGE(TAG_, "Failed to open file %s for writing", wifi_config_path_);
+        ESP_LOGE(TAG_, "Failed to open file %s for writing", ssid_path_);
         return ESP_FAIL;
     }
     fprintf(f, ssid);
@@ -24,16 +42,16 @@ esp_err_t Config::SetWiFi(char *ssid)
     return ESP_OK;
 }
 
-esp_err_t Config::SetWiFi(char *ssid, char *key)
+esp_err_t Config::SetWiFiKey(char *key)
 {
-    ESP_LOGD(TAG_, "Setting SSID to %s and key to %s", ssid, key);
-    FILE *f = fopen(wifi_config_path_, "w");
+    ESP_LOGD(TAG_, "Setting key to %s", key);
+    FILE *f = fopen(wpa_key_path_, "w");
     if (f == NULL)
     {
-        ESP_LOGE(TAG_, "Failed to open file %s for writing", wifi_config_path_);
+        ESP_LOGE(TAG_, "Failed to open file %s for writing", wpa_key_path_);
         return ESP_FAIL;
     }
-    fprintf(f, "%s\n%s", ssid, key);
+    fprintf(f, key);
     fclose(f);
     return ESP_OK;
 }
@@ -41,10 +59,10 @@ esp_err_t Config::SetWiFi(char *ssid, char *key)
 esp_err_t Config::GetWiFi(config_wifi_t *config)
 {
     ESP_LOGD(TAG_, "Retrieving WiFi configuration");
-    FILE *f = fopen(wifi_config_path_, "r");
+    FILE *f = fopen(ssid_path_, "r");
     if (f == NULL)
     {
-        ESP_LOGE(TAG_, "Failed to open file %s for writing", wifi_config_path_);
+        ESP_LOGE(TAG_, "Failed to open file %s for writing", ssid_path_);
         return ESP_FAIL;
     }
 
@@ -56,7 +74,14 @@ esp_err_t Config::GetWiFi(config_wifi_t *config)
         return ESP_OK;
     }
     config->ssid = strdup(ssid);
+    fclose(f);
 
+    f = fopen(wpa_key_path_, "r");
+    if (f == NULL)
+    {
+        ESP_LOGE(TAG_, "Failed to open file %s for writing", wpa_key_path_);
+        return ESP_FAIL;
+    }
     char key[64];
     if (fgets(key, 64, f) == NULL)
     {
@@ -70,4 +95,12 @@ esp_err_t Config::GetWiFi(config_wifi_t *config)
 
     fclose(f);
     return ESP_OK;
+}
+
+Config::Config()
+{
+    ESP_ERROR_CHECK(EnsureFile(ssid_path_));
+    ESP_ERROR_CHECK(EnsureFile(wpa_key_path_));
+    ESP_ERROR_CHECK(EnsureFile(basic_auth_config_path_));
+    ESP_ERROR_CHECK(EnsureFile(access_control_config_path_));
 }

@@ -19,13 +19,13 @@ void UART::Reset()
     esp_restart();
 }
 
-uart_err_t UART::SetWifiSSID()
+uart_err_t UART::SetWiFiSSID()
 {
-    char ssid[33];
+    char ssid[33] = "";
     int i = 0;
 
     bool data = true;
-    while (data && i < 33)
+    while (data)
     {
         uint8_t buf[1];
         int len = uart_read_bytes(UART_NUM_0, buf, 1, 20 / portTICK_RATE_MS);
@@ -36,13 +36,13 @@ uart_err_t UART::SetWifiSSID()
         }
 
         // Check length of SSID if this is an end of line signal
-        if ((buf[0] != 0x00 || buf[0] != 0x0A) && i >= 32)
+        if (buf[0] != 0x00 && i >= 32)
         {
             // SSID too long
             return UART_ERR_INVALID_VALUE;
         }
 
-        if ((buf[0] != 0x00 || buf[0] != 0x0A) && i <= 2)
+        if (buf[0] == 0x00 && i < 2)
         {
             // SSID too short
             return UART_ERR_INVALID_VALUE;
@@ -51,13 +51,9 @@ uart_err_t UART::SetWifiSSID()
         switch (buf[0])
         {
         case 0x00:
-            config_.SetWiFi(ssid);
+            config_.SetWiFiSSID(ssid);
             return UART_ERR_OK;
-        case 0x0A:
-            // Client will send key next
-            ssid[i] = buf[0];
-            data = false;
-            break;
+
         default:
             ssid[i] = buf[0];
             break;
@@ -65,12 +61,17 @@ uart_err_t UART::SetWifiSSID()
 
         i++;
     }
+    // Shouldn't get here but if we do, something has gone wrong
+    return UART_ERR_FAIL;
+}
 
-    char key[64];
-    i = 0;
+uart_err_t UART::SetWiFiKey()
+{
+    char key[64] = "";
+    int i = 0;
 
-    data = true;
-    while (data && i < 64)
+    bool data = true;
+    while (data)
     {
         uint8_t buf[1];
         int len = uart_read_bytes(UART_NUM_0, buf, 1, 20 / portTICK_RATE_MS);
@@ -87,7 +88,7 @@ uart_err_t UART::SetWifiSSID()
             return UART_ERR_INVALID_VALUE;
         }
 
-        if (buf[0] != 0x00 && i <= 8)
+        if (buf[0] == 0x00 && i < 8)
         {
             // Key too short
             return UART_ERR_INVALID_VALUE;
@@ -96,7 +97,7 @@ uart_err_t UART::SetWifiSSID()
         switch (buf[0])
         {
         case 0x00:
-            config_.SetWiFi(ssid, key);
+            config_.SetWiFiKey(key);
             return UART_ERR_OK;
         default:
             key[i] = buf[0];
@@ -105,10 +106,12 @@ uart_err_t UART::SetWifiSSID()
 
         i++;
     }
+
+    // Shouldn't get here but if we do, something has gone wrong
     return UART_ERR_FAIL;
 }
 
-uart_err_t UART::GetWifiSSID()
+uart_err_t UART::GetWiFiSSID()
 {
     ESP_LOGD(TAG_, "Fetching Wifi SSID");
     config_wifi_t conf;
@@ -151,7 +154,7 @@ void UART::Listen()
             continue;
         }
 
-        uart_err_t status[1];
+        uart_err_t status[1] = {UART_ERR_OK};
 
         switch (cmd)
         {
@@ -159,12 +162,16 @@ void UART::Listen()
             Reset();
             break;
 
-        case UART_CMD_CONFIG_SET_WIFI:
-            status[0] = SetWifiSSID();
+        case UART_CMD_CONFIG_SET_WIFI_SSID:
+            status[0] = SetWiFiSSID();
             break;
 
         case UART_CMD_CONFIG_GET_WIFI_SSID:
-            status[0] = GetWifiSSID();
+            status[0] = GetWiFiSSID();
+            break;
+
+        case UART_CMD_CONFIG_SET_WIFI_AUTH:
+            status[0] = SetWiFiKey();
             break;
 
         default:
