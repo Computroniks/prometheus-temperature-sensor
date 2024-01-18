@@ -1,3 +1,5 @@
+# SPDX-FileCopyrightText: 2024 Sidings Media <contact@sidingsmedia.com>
+# SPDX-License-Identifier: MIT
 """
 Serial tool to modify settings of temp sensor
 """
