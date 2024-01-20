@@ -7,6 +7,7 @@
 #include <stdint.h>
 
 #include "config.hpp"
+#include "sensor/aht10.hpp"
 
 #define BUF_SIZE (1024)
 
@@ -16,6 +17,8 @@ typedef enum {
     UART_CMD_CONFIG_GET_WIFI_SSID = 0x12,
     UART_CMD_CONFIG_SET_WIFI_AUTH = 0x13,
     UART_CMD_CONFIG_CLEAR_WIFI = 0x14,
+    UART_CMD_SENSOR_GET_TEMP = 0x20,
+    UART_CMD_SENSOR_GET_HUMIDITY = 0x21,
 } uart_cmd_t;
 
 typedef enum {
@@ -31,6 +34,7 @@ class UART {
 private:
     const char* TAG_ = "UART";
     Config config_;
+    AHT10* sensor_;
 
     /**
      * @brief Handler for the UART_CMD_RESET command.
@@ -46,13 +50,27 @@ private:
      */
     uart_err_t ResetWiFiConf();
 
+    /**
+     * @brief Get the current temperature measurement
+     *
+     * @return uart_err_t
+     */
+    uart_err_t GetTemp();
+
+    /**
+     * @brief Get the current humidity measurement
+     *
+     * @return uart_err_t
+     */
+    uart_err_t GetHumidity();
+
 public:
     /**
      * @brief Construct a new UART object
      *
      * @param baud Baudrate to listen and transmit at
      */
-    UART(int baud);
+    UART(int baud, AHT10* sensor);
 
     /**
      * @brief Start listening for commands

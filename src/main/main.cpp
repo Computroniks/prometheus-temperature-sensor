@@ -104,7 +104,8 @@ esp_err_t init_spiffs() {
 }
 
 void uart_task(void* arg) {
-    UART uart = UART(74800);
+    AHT10* sensor = (AHT10*)arg;
+    UART uart = UART(74800, sensor);
     uart.Listen();
 }
 
@@ -112,12 +113,11 @@ extern "C" void app_main() {
     show_startup_info();
     init_spiffs();
 
+    AHT10 sensor = AHT10(GPIO_NUM_0, GPIO_NUM_2, I2C_NUM_0, 0x38);
     // Start UART command handler first after initial startup
-    xTaskCreate(uart_task, "uart_listen", 2048, NULL, 10, NULL);
+    xTaskCreate(uart_task, "uart_listen", 2048, &sensor, 10, NULL);
 
     network_init();
-
-    AHT10 sensor = AHT10(GPIO_NUM_0, GPIO_NUM_2, I2C_NUM_0, 0x38);
 
     aht10_measurement_t res = {};
     sensor.Measure(&res);

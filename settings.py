@@ -5,6 +5,7 @@ Serial tool to modify settings of temp sensor
 """
 
 from enum import Enum
+import struct
 
 import click
 import serial
@@ -15,6 +16,8 @@ class Commands(Enum):
     UART_CMD_CONFIG_GET_WIFI_SSID = b"\x12"
     UART_CMD_CONFIG_SET_WIFI_KEY = b"\x13"
     UART_CMD_CONFIG_CLEAR_WIFI = b"\x14"
+    UART_CMD_SENSOR_GET_TEMP = b"\x20"
+    UART_CMD_SENSOR_GET_HUMIDITY = b"\x21"
 
 
 class Err(Enum):
@@ -54,6 +57,7 @@ def cli(ctx, port: str, baud: int):
     ctx.obj["port"] = port
     ctx.obj["baud"] = baud
 
+
 @cli.command("clear-wifi-conf")
 @click.pass_context
 def clear_wifi_conf(ctx):
@@ -62,6 +66,34 @@ def clear_wifi_conf(ctx):
 
     conn = serial.Serial(ctx.obj["port"], ctx.obj["baud"])
     conn.write(buf)
+    res = _read(conn, 1)
+    click.echo(Err(res).name)
+
+
+@cli.command("get-temp")
+@click.pass_context
+def get_temp(ctx):
+    buf = bytearray()
+    buf.extend(Commands.UART_CMD_SENSOR_GET_TEMP.value)
+
+    conn = serial.Serial(ctx.obj["port"], ctx.obj["baud"])
+    conn.write(buf)
+    temp = _read(conn, 4)
+    click.echo(struct.unpack("f", temp)[0])
+    res = _read(conn, 1)
+    click.echo(Err(res).name)
+
+
+@cli.command("get-humidity")
+@click.pass_context
+def get_humidity(ctx):
+    buf = bytearray()
+    buf.extend(Commands.UART_CMD_SENSOR_GET_HUMIDITY.value)
+
+    conn = serial.Serial(ctx.obj["port"], ctx.obj["baud"])
+    conn.write(buf)
+    humidity = _read(conn, 4)
+    click.echo(struct.unpack("f", humidity)[0])
     res = _read(conn, 1)
     click.echo(Err(res).name)
 
