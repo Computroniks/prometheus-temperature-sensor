@@ -20,6 +20,8 @@
 #include "wifi_provisioning/manager.h"
 #include "wifi_provisioning/scheme_softap.h"
 
+#include "config/config.hpp"
+
 const int WIFI_CONNECTED_EVENT = BIT0;
 EventGroupHandle_t wifi_event_group;
 const char TAG_[] = "wifi_provisioning";
@@ -229,27 +231,11 @@ void wifi_init_provisioning() {
     }
 }
 
-void init_non_volatile_storage() {
-    const char TAG[] = "NVS";
-    ESP_LOGI(TAG, "Initialising NVS");
-    esp_err_t err = nvs_flash_init();
-
-    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
-        ESP_LOGI(TAG, "Partition truncated. Erasing.");
-
-        // Partition has been truncated and needs to be cleared
-        ESP_ERROR_CHECK(nvs_flash_erase());
-
-        // Retry init
-        ESP_ERROR_CHECK(nvs_flash_init());
-    }
-}
-
 void network_init() {
     const char TAG[] = "NETWORK_INIT";
     ESP_LOGI(TAG, "Starting network configuration");
 
-    init_non_volatile_storage();
+    Config::InitNVS();
     wifi_init_events();       // Initialize event handlers
     wifi_init_net();          // Initialize networking
     wifi_init_mdns();         // Initialize mDNS

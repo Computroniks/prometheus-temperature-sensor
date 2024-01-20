@@ -8,8 +8,11 @@
 
 #include "esp_err.h"
 #include "esp_log.h"
+#include "nvs_flash.h"
 
 #include "config/config.hpp"
+
+const char* Config::TAG_ = "config";
 
 esp_err_t Config::EnsureFile(const char* filename) {
     struct stat st;
@@ -25,68 +28,40 @@ esp_err_t Config::EnsureFile(const char* filename) {
     return ESP_OK;
 }
 
-esp_err_t Config::SetWiFiSSID(char* ssid) {
-    ESP_LOGD(TAG_, "Setting SSID to %s", ssid);
-    FILE* f = fopen(ssid_path_, "w");
-    if (f == NULL) {
-        ESP_LOGE(TAG_, "Failed to open file %s for writing", ssid_path_);
-        return ESP_FAIL;
+esp_err_t Config::InitNVS() {
+    ESP_LOGI(TAG_, "Initialising NVS");
+    esp_err_t err = nvs_flash_init();
+
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_LOGI(TAG_, "Partition truncated. Erasing");
+
+        err = nvs_flash_erase();
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG_, "Failed to erase NVS partition");
+            return err;
+        }
+
+        err = nvs_flash_init();
+        if (err != ESP_OK) {
+            ESP_LOGE(TAG_, "Failed to initialise NVS partition after erasing");
+            return err;
+        }
     }
-    fprintf(f, ssid);
-    fclose(f);
     return ESP_OK;
 }
 
-esp_err_t Config::SetWiFiKey(char* key) {
-    ESP_LOGD(TAG_, "Setting key to %s", key);
-    FILE* f = fopen(wpa_key_path_, "w");
-    if (f == NULL) {
-        ESP_LOGE(TAG_, "Failed to open file %s for writing", wpa_key_path_);
-        return ESP_FAIL;
-    }
-    fprintf(f, key);
-    fclose(f);
-    return ESP_OK;
-}
-
-esp_err_t Config::GetWiFi(config_wifi_t* config) {
-    ESP_LOGD(TAG_, "Retrieving WiFi configuration");
-    FILE* f = fopen(ssid_path_, "r");
-    if (f == NULL) {
-        ESP_LOGE(TAG_, "Failed to open file %s for writing", ssid_path_);
-        return ESP_FAIL;
+esp_err_t Config::EraseWiFiConfig() {
+    ESP_LOGI(TAG_, "Clearing WiFi config");
+    esp_err_t err = nvs_flash_erase();
+    if (err != ESP_OK) {
+        ESP_LOGW(TAG_, "Failed to clear clear WiFi configuration: %s", esp_err_to_name(err));
+        return err;
     }
 
-    char ssid[33];
-    if (fgets(ssid, 33, f) == NULL) {
-        config->type = CONFIG_WIFI_DISABLED;
-        fclose(f);
-        return ESP_OK;
-    }
-    config->ssid = strdup(ssid);
-    fclose(f);
-
-    f = fopen(wpa_key_path_, "r");
-    if (f == NULL) {
-        ESP_LOGE(TAG_, "Failed to open file %s for writing", wpa_key_path_);
-        return ESP_FAIL;
-    }
-    char key[64];
-    if (fgets(key, 64, f) == NULL) {
-        config->type = CONFIG_WIFI_OPEN;
-    }
-    else {
-        config->type = CONFIG_WIFI_WPA;
-    }
-    config->key = strdup(key);
-
-    fclose(f);
-    return ESP_OK;
+    return InitNVS();
 }
 
 Config::Config() {
-    ESP_ERROR_CHECK(EnsureFile(ssid_path_));
-    ESP_ERROR_CHECK(EnsureFile(wpa_key_path_));
     ESP_ERROR_CHECK(EnsureFile(basic_auth_config_path_));
     ESP_ERROR_CHECK(EnsureFile(access_control_config_path_));
 }

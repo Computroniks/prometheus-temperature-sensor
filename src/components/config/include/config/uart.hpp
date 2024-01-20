@@ -15,6 +15,7 @@ typedef enum {
     UART_CMD_CONFIG_SET_WIFI_SSID = 0x11,
     UART_CMD_CONFIG_GET_WIFI_SSID = 0x12,
     UART_CMD_CONFIG_SET_WIFI_AUTH = 0x13,
+    UART_CMD_CONFIG_CLEAR_WIFI = 0x14,
 } uart_cmd_t;
 
 typedef enum {
@@ -23,6 +24,7 @@ typedef enum {
     UART_ERR_DISABLED = 0x02,
     UART_ERR_INVALID_CMD = 0x03,
     UART_ERR_INVALID_VALUE = 0x04,
+    UART_ERR_NOT_IMPLEMENTED = 0x05,
 } uart_err_t;
 
 class UART {
@@ -38,20 +40,11 @@ private:
     void Reset();
 
     /**
-     * @brief Set the WiFi SSID in config
+     * @brief Handler for resetting WiFi configuration
      *
      * @return uart_err_t
      */
-    uart_err_t SetWiFiSSID();
-
-    /**
-     * @brief Get the currently configured WiFi SSID
-     *
-     * @return uart_err_t
-     */
-    uart_err_t GetWiFiSSID();
-
-    uart_err_t SetWiFiKey();
+    uart_err_t ResetWiFiConf();
 
 public:
     /**

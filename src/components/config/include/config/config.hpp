@@ -20,9 +20,7 @@ struct config_wifi_t {
 
 class Config {
 private:
-    const char* TAG_ = "config";
-    const char* ssid_path_ = "/spiffs/ssid";
-    const char* wpa_key_path_ = "/spiffs/wpa_key";
+    static const char* TAG_;
     const char* basic_auth_config_path_ = "/spiffs/basicauth";
     const char* access_control_config_path_ = "/spiffs/accesscontrol";
 
@@ -35,30 +33,26 @@ private:
     esp_err_t EnsureFile(const char* filename);
 
 public:
-    /**
-     * @brief Set SSID for open WiFi network
-     *
-     * @param ssid SSID to connect to
-     * @return esp_err_t
-     */
-    esp_err_t SetWiFiSSID(char* ssid);
 
     /**
-     * @brief Set key for WPA Personal WiFi network
+     * @brief Initialise NVS flash for WiFi config storage
      *
-     * @param key Key to use for authentication
      * @return esp_err_t
      */
-    esp_err_t SetWiFiKey(char* key);
+    static esp_err_t InitNVS();
 
     /**
-     * @brief Retrieve WiFi config
+     * @brief Clear NVS flash partition to clear all WiFi config.
      *
-     * @param config Struct to populate with config
      * @return esp_err_t
      */
-    esp_err_t GetWiFi(config_wifi_t* config);
+    esp_err_t EraseWiFiConfig();
 
+    /**
+     * @brief Construct a new Config object
+     * Ensures that all required files are present. Aborts if files
+     * could not be created.
+     */
     Config();
 };
 

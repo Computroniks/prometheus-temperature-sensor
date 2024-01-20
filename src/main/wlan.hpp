@@ -47,9 +47,6 @@ void wifi_init_mdns();
 // Initialise provisioning and check if we actually need to do anything
 void wifi_init_provisioning();
 
-// Init the default NVS partition for key value storage
-void init_non_volatile_storage();
-
 // Provision this device
 void network_init();
 

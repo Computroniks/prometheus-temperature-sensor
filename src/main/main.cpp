@@ -111,18 +111,16 @@ void uart_task(void* arg) {
 extern "C" void app_main() {
     show_startup_info();
     init_spiffs();
-    Config config = Config();
-    config_wifi_t conf;
-    config.GetWiFi(&conf);
-    ESP_LOGD(TAG_, "Connecting to WiFi SSID: %s Key:%s", conf.ssid, conf.key);
+
+    // Start UART command handler first after initial startup
+    xTaskCreate(uart_task, "uart_listen", 2048, NULL, 10, NULL);
+
     network_init();
-    free(conf.ssid);
-    free(conf.key);
 
     AHT10 sensor = AHT10(GPIO_NUM_0, GPIO_NUM_2, I2C_NUM_0, 0x38);
 
     aht10_measurement_t res = {};
     sensor.Measure(&res);
 
-    xTaskCreate(uart_task, "uart_listen", 2048, NULL, 10, NULL);
+
 }
