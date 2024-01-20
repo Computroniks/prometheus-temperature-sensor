@@ -18,6 +18,7 @@ class Commands(Enum):
     UART_CMD_CONFIG_CLEAR_WIFI = b"\x14"
     UART_CMD_SENSOR_GET_TEMP = b"\x20"
     UART_CMD_SENSOR_GET_HUMIDITY = b"\x21"
+    UART_CMD_SYS_GET_UPTIME = b"\x30"
 
 
 class Err(Enum):
@@ -96,6 +97,21 @@ def get_humidity(ctx):
     click.echo(struct.unpack("f", humidity)[0])
     res = _read(conn, 1)
     click.echo(Err(res).name)
+
+@cli.command("get-uptime", help="Get system uptime in seconds")
+@click.pass_context
+def get_uptime(ctx):
+    buf = bytearray()
+    buf.extend(Commands.UART_CMD_SYS_GET_UPTIME.value)
+
+    conn = serial.Serial(ctx.obj["port"], ctx.obj["baud"])
+    conn.write(buf)
+    uptime = _read(conn, 8)
+    uptime = struct.unpack("q", uptime)[0]
+    click.echo(uptime / (1000*1000))
+    res = _read(conn, 1)
+    click.echo(Err(res).name)
+
 
 
 @cli.command()

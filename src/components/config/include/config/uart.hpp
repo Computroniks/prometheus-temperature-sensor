@@ -19,6 +19,7 @@ typedef enum {
     UART_CMD_CONFIG_CLEAR_WIFI = 0x14,
     UART_CMD_SENSOR_GET_TEMP = 0x20,
     UART_CMD_SENSOR_GET_HUMIDITY = 0x21,
+    UART_CMD_SYS_GET_UPTIME = 0x30,
 } uart_cmd_t;
 
 typedef enum {
@@ -63,6 +64,13 @@ private:
      * @return uart_err_t
      */
     uart_err_t GetHumidity();
+
+    /**
+     * @brief Get the system uptime in microseconds
+     *
+     * @return uart_err_t
+     */
+    uart_err_t GetUptime();
 
 public:
     /**

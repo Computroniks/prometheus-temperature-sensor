@@ -9,6 +9,7 @@
 #include "freertos/FreeRTOS.h"
 
 #include "esp_system.h"
+#include "esp_timer.h"
 #include "nvs_flash.h"
 #include "driver/uart.h"
 
@@ -40,6 +41,12 @@ uart_err_t UART::GetHumidity() {
     aht10_measurement_t result;
     sensor_->Measure(&result);
     uart_write_bytes(UART_NUM_0, (const char*)&result.humidity, 4);
+    return UART_ERR_OK;
+}
+
+uart_err_t UART::GetUptime() {
+    int64_t time = esp_timer_get_time();
+    uart_write_bytes(UART_NUM_0, (const char*)&time, 8);
     return UART_ERR_OK;
 }
 
@@ -89,6 +96,10 @@ void UART::Listen() {
 
         case UART_CMD_SENSOR_GET_HUMIDITY:
             status[0] = GetHumidity();
+            break;
+
+        case UART_CMD_SYS_GET_UPTIME:
+            status[0] = GetUptime();
             break;
 
         default:
