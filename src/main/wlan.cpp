@@ -22,6 +22,7 @@
 
 const int WIFI_CONNECTED_EVENT = BIT0;
 EventGroupHandle_t wifi_event_group;
+const char TAG_[] = "wifi_provisioning";
 
 void wifi_init_station() {
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
@@ -46,16 +47,15 @@ void event_handler_wifi_prov(
     int id,
     void* data
 ) {
-    const char TAG[] = "WIFI_PROVISIONING";
     switch (id) {
     case WIFI_PROV_START:
-        ESP_LOGI(TAG, "Starting WiFi provisioning");
+        ESP_LOGI(TAG_, "Starting WiFi provisioning");
         break;
     case WIFI_PROV_CRED_RECV:
     {
         wifi_sta_config_t* station_config = (wifi_sta_config_t*)data;
         ESP_LOGI(
-            TAG,
+            TAG_,
             "Received WiFi credentials\n\tSSID: %s\n\tPassword: %s",
             (const char*)station_config->ssid,
             (const char*)station_config->password
@@ -65,28 +65,28 @@ void event_handler_wifi_prov(
     case WIFI_PROV_CRED_FAIL:
     {
         wifi_prov_sta_fail_reason_t* err = (wifi_prov_sta_fail_reason_t*)data;
-        ESP_LOGE(TAG, "Failed to provision device");
+        ESP_LOGE(TAG_, "Failed to provision device");
         if (*err == WIFI_PROV_STA_AUTH_ERROR) {
             ESP_LOGE(
-                TAG,
+                TAG_,
                 "Authentication error. Failed to authenticate with station");
         }
         else {
             ESP_LOGE(
-                TAG,
+                TAG_,
                 "Could not connect to access point. Access point not found");
         }
         break;
     }
     case WIFI_PROV_CRED_SUCCESS:
-        ESP_LOGI(TAG, "Provisioning successful");
+        ESP_LOGI(TAG_, "Provisioning successful");
         break;
     case WIFI_PROV_END:
-        ESP_LOGD(TAG, "Deinitialising provisioning manager");
+        ESP_LOGD(TAG_, "Deinitialising provisioning manager");
         wifi_prov_mgr_deinit();
         break;
     default:
-        ESP_LOGD(TAG, "Got unrecognised event. ID: %d", id);
+        ESP_LOGD(TAG_, "Got unrecognised event. ID: %d", id);
         break;
     }
 }
@@ -97,25 +97,25 @@ void event_handler_wifi(
     int id,
     void* data
 ) {
-    const char TAG[] = "WIFI";
+    const char TAG_[] = "wifi_event";
 
     switch (id) {
     case WIFI_EVENT_STA_START:
-        ESP_LOGD(TAG, "Got WIFI_EVENT_STA_START");
+        ESP_LOGD(TAG_, "Got WIFI_EVENT_STA_START");
         esp_wifi_connect();
         break;
     case WIFI_EVENT_STA_DISCONNECTED:
-        ESP_LOGI(TAG, "Disconnected. Attempting to reconnect");
+        ESP_LOGI(TAG_, "Disconnected. Attempting to reconnect");
         esp_wifi_connect();
         break;
     case WIFI_EVENT_AP_STACONNECTED:
-        ESP_LOGI(TAG, "Station connected to SoftAP");
+        ESP_LOGI(TAG_, "Station connected to SoftAP");
         break;
     case WIFI_EVENT_AP_STADISCONNECTED:
-        ESP_LOGI(TAG, "Station disconnected from SoftAP");
+        ESP_LOGI(TAG_, "Station disconnected from SoftAP");
         break;
     default:
-        ESP_LOGD(TAG, "Got unrecognised event. ID: %d", id);
+        ESP_LOGD(TAG_, "Got unrecognised event. ID: %d", id);
         break;
     }
 }
@@ -125,20 +125,27 @@ void event_handler_ip(void* arg,
     int id,
     void* data
 ) {
-    const char TAG[] = "IP";
+    const char TAG_[] = "ip_event";
     if (id == IP_EVENT_STA_GOT_IP) {
         ip_event_got_ip_t* event = (ip_event_got_ip_t*)data;
         ESP_LOGI(
-            TAG,
-            "Connected with settings:\n\tIP: " IPSTR
-            "\n\tGateway: " IPSTR
-            "\n\tMask: " IPSTR,
+            TAG_,
+            "Got IPv4 Address: " IPSTR " Gateway: " IPSTR " Mask: " IPSTR,
             IP2STR(&event->ip_info.ip),
-            IP2STR(&event->ip_info.netmask),
-            IP2STR(&event->ip_info.gw));
+            IP2STR(&event->ip_info.gw),
+            IP2STR(&event->ip_info.netmask)
+        );
 
         // Tell the rest of the program to continue
         xEventGroupSetBits(wifi_event_group, WIFI_CONNECTED_EVENT);
+    }
+    else if (id == IP_EVENT_GOT_IP6) {
+        ip_event_got_ip6_t* event = (ip_event_got_ip6_t*)data;
+        ESP_LOGI(
+            TAG_,
+            "Got IPv6 Address: %s",
+            ip6addr_ntoa(&event->ip6_info.ip)
+        );
     }
 }
 
