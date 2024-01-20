@@ -45,13 +45,33 @@ char* webserver_util_format_metrics() {
         "environment_humidity_percent %f\n"
         "# HELP device_uptime_seconds Uptime of device in seconds\n"
         "# TYPE device_uptime_seconds counter\n"
-        "device_uptime_seconds %.0f\n";
+        "device_uptime_seconds %.0f\n"
+        "# HELP device_free_heap_bytes Number of bytes free on heap\n"
+        "# TYPE device_free_heap_bytes gauge\n"
+        "device_free_heap_bytes %d\n";
 
     const double uptime = (double)esp_timer_get_time() / 1000000;
+    const uint32_t heap = esp_get_free_heap_size();
+
     char* buf;
-    size_t len = snprintf(NULL, 0, metrics_template, measurement.temperature, measurement.humidity, uptime);
+    size_t len = snprintf(
+        NULL,
+        0,
+        metrics_template,
+        measurement.temperature,
+        measurement.humidity,
+        uptime,
+        heap
+    );
     buf = (char*)malloc(len);
-    sprintf(buf, metrics_template, measurement.temperature, measurement.humidity, uptime);
+    sprintf(
+        buf,
+        metrics_template,
+        measurement.temperature,
+        measurement.humidity,
+        uptime,
+        heap
+    );
     return buf;
 }
 
