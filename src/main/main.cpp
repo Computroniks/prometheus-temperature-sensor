@@ -10,62 +10,63 @@
 #include "freertos/task.h"
 #include "sdkconfig.h"
 
+#include "wlan.hpp"
 #include "config/uart.hpp"
 #include "sensor/aht10.hpp"
 
 #define SPIFFS_MAX_FILES 4
 
-static const char *TAG = "main";
+static const char *TAG_ = "main";
 
 void show_startup_info()
 {
     // Firmware info
-    ESP_LOGI(TAG, "%s %s", PROJECT_NAME, PROJECT_VERSION);
-    ESP_LOGI(TAG, "Compiled %s %s", __DATE__, __TIME__);
-    ESP_LOGI(TAG, "Repository %s", PROJECT_REPO);
+    ESP_LOGI(TAG_, "%s %s", PROJECT_NAME, PROJECT_VERSION);
+    ESP_LOGI(TAG_, "Compiled %s %s", __DATE__, __TIME__);
+    ESP_LOGI(TAG_, "Repository %s", PROJECT_REPO);
 
     // IC Info
     esp_chip_info_t chip;
     esp_chip_info(&chip);
     ESP_LOGI(
-        TAG, "Model: %s",
+        TAG_, "Model: %s",
         (chip.model == CHIP_ESP8266) ? "ESP8266" : "ESP32");
-    ESP_LOGI(TAG, "Silicon revision: %d", chip.revision);
-    ESP_LOGI(TAG, "Cores: %d", chip.cores);
-    ESP_LOGI(TAG, "Crystal: %dMHz", CRYSTAL_USED);
+    ESP_LOGI(TAG_, "Silicon revision: %d", chip.revision);
+    ESP_LOGI(TAG_, "Cores: %d", chip.cores);
+    ESP_LOGI(TAG_, "Crystal: %dMHz", CRYSTAL_USED);
 
     // Chip features
-    ESP_LOGI(TAG, "Features:");
+    ESP_LOGI(TAG_, "Features:");
     ESP_LOGI(
-        TAG, "Embedded flash: %s",
+        TAG_, "Embedded flash: %s",
         (chip.features & CHIP_FEATURE_EMB_FLASH) ? "Yes" : "No");
     ESP_LOGI(
-        TAG, "2.4GHz WiFi: %s",
+        TAG_, "2.4GHz WiFi: %s",
         (chip.features & CHIP_FEATURE_WIFI_BGN) ? "Yes" : "No");
     ESP_LOGI(
-        TAG, "Bluetooth LE: %s",
+        TAG_, "Bluetooth LE: %s",
         (chip.features & CHIP_FEATURE_BLE) ? "Yes" : "No");
     ESP_LOGI(
-        TAG, "Bluetooth Classic: %s",
+        TAG_, "Bluetooth Classic: %s",
         (chip.features & CHIP_FEATURE_BT) ? "Yes" : "No");
 
     // MAC addresses
     unsigned char mac[8];
     esp_efuse_mac_get_default(mac);
     ESP_LOGI(
-        TAG, "MAC Address: %02x:%02x:%02x:%02x:%02x:%02x",
+        TAG_, "MAC Address: %02x:%02x:%02x:%02x:%02x:%02x",
         mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
 
     // Flash Info
     ESP_LOGI(
-        TAG, "%dMB %s flash",
+        TAG_, "%dMB %s flash",
         spi_flash_get_chip_size() / (1024 * 1024),
         (chip.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
 }
 
 esp_err_t init_spiffs()
 {
-    ESP_LOGI(TAG, "Initialising SPIFFS file system");
+    ESP_LOGI(TAG_, "Initialising SPIFFS file system");
 
     esp_vfs_spiffs_conf_t conf = {
         .base_path = "/spiffs",
@@ -80,13 +81,13 @@ esp_err_t init_spiffs()
         switch (ret)
         {
         case ESP_FAIL:
-            ESP_LOGE(TAG, "ESP_FAIL: Failed to mount or format file system");
+            ESP_LOGE(TAG_, "ESP_FAIL: Failed to mount or format file system");
             break;
         case ESP_ERR_NOT_FOUND:
-            ESP_LOGE(TAG, "ESP_ERR_NOT_FOUND: Could not find SPIFFS partition");
+            ESP_LOGE(TAG_, "ESP_ERR_NOT_FOUND: Could not find SPIFFS partition");
             break;
         default:
-            ESP_LOGE(TAG, "Failed to initialise SPIFFS (%s)", esp_err_to_name(ret));
+            ESP_LOGE(TAG_, "Failed to initialise SPIFFS (%s)", esp_err_to_name(ret));
             break;
         }
         return ret;
@@ -96,12 +97,12 @@ esp_err_t init_spiffs()
     ret = esp_spiffs_info(NULL, &total, &used);
     if (ret != ESP_OK)
     {
-        ESP_LOGE(TAG, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret));
+        ESP_LOGE(TAG_, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret));
         return ret;
     }
 
     {
-        ESP_LOGI(TAG, "Partition size: total: %d, used: %d", total, used);
+        ESP_LOGI(TAG_, "Partition size: total: %d, used: %d", total, used);
     }
 
     return ESP_OK;
@@ -117,6 +118,13 @@ extern "C" void app_main()
 {
     show_startup_info();
     init_spiffs();
+    Config config = Config();
+    config_wifi_t conf;
+    config.GetWiFi(&conf);
+    ESP_LOGD(TAG_, "Connecting to WiFi SSID: %s Key:%s", conf.ssid, conf.key);
+    network_init();
+    free(conf.ssid);
+    free(conf.key);
 
     AHT10 sensor = AHT10(GPIO_NUM_0, GPIO_NUM_2, I2C_NUM_0, 0x38);
 
