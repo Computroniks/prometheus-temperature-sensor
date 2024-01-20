@@ -88,6 +88,40 @@ uint8_t AHT10::GetStatus() {
     return ret;
 }
 
+esp_err_t AHT10::TriggerMeasure() {
+    ESP_LOGD(TAG_, "Triggering read");
+    uint8_t cmd[3] = { AHT10_CMD_TRIGGER, 0x33, 0x00 };
+    ESP_ERROR_CHECK(Write(cmd, 3));
+
+    // Wait for the result to be ready
+    while (GetStatus() & AHT10_STATUS_BUSY) {
+        vTaskDelay(10 / portTICK_PERIOD_MS);
+    }
+
+    ESP_LOGD(TAG_, "Data ready, reading...");
+
+    // Read our data from the sensor
+    uint8_t data[6];
+    ESP_ERROR_CHECK(Read(data, 6));
+
+    uint32_t h_data = data[1];
+    h_data <<= 8;
+    h_data |= data[2];
+    h_data <<= 4;
+    h_data |= data[3] >> 4;
+    last_humidity_ = ((float)h_data * 100) / 0x100000;
+
+    uint32_t t_data = data[3] & 0x0F;
+    t_data <<= 8;
+    t_data |= data[4];
+    t_data <<= 8;
+    t_data |= data[5];
+    last_temp_ = ((float)t_data * 200 / 0x100000) - 50;
+
+    ESP_LOGI(TAG_, "Read data from sensor. Humidity: %f Temperature: %f", last_humidity_, last_temp_);
+    return ESP_OK;
+}
+
 AHT10::AHT10(gpio_num_t scl, gpio_num_t sda, i2c_port_t port, uint8_t addr) {
     port_ = port;
     addr_ = addr;
@@ -109,35 +143,18 @@ AHT10::AHT10(gpio_num_t scl, gpio_num_t sda, i2c_port_t port, uint8_t addr) {
 }
 
 esp_err_t AHT10::Measure(aht10_measurement_t* result) {
-    ESP_LOGD(TAG_, "Triggering read");
-    uint8_t cmd[3] = { AHT10_CMD_TRIGGER, 0x33, 0x00 };
-    ESP_ERROR_CHECK(Write(cmd, 3));
-
-    // Wait for the result to be ready
-    while (GetStatus() & AHT10_STATUS_BUSY) {
-        vTaskDelay(10 / portTICK_PERIOD_MS);
+    if (!measurement_active_) {
+        measurement_active_ = true;
+        TriggerMeasure();
+    }
+    else {
+        while (measurement_active_) {
+            // Wait until the data is there
+            vTaskDelay(10 / portTICK_PERIOD_MS);
+        }
     }
 
-    ESP_LOGD(TAG_, "Data ready, reading...");
-
-    // Read our data from the sensor
-    uint8_t data[6];
-    ESP_ERROR_CHECK(Read(data, 6));
-
-    uint32_t h_data = data[1];
-    h_data <<= 8;
-    h_data |= data[2];
-    h_data <<= 4;
-    h_data |= data[3] >> 4;
-    result->humidity = ((float)h_data * 100) / 0x100000;
-
-    uint32_t t_data = data[3] & 0x0F;
-    t_data <<= 8;
-    t_data |= data[4];
-    t_data <<= 8;
-    t_data |= data[5];
-    result->temperature = ((float)t_data * 200 / 0x100000) - 50;
-
-    ESP_LOGI(TAG_, "Read data from sensor. Humidity: %f Temperature: %f", result->humidity, result->temperature);
+    result->humidity = last_humidity_;
+    result->temperature = last_temp_;
     return ESP_OK;
 }

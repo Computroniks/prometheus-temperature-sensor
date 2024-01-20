@@ -28,8 +28,13 @@ class AHT10 {
 private:
     const char TAG_[6] = "AHT10";
 
+    bool measurement_active_ = false;
+    float last_temp_;
+    float last_humidity_;
+
     i2c_port_t port_;
     uint8_t addr_;
+
 
     /**
      * @brief Read data from sensor
@@ -70,6 +75,15 @@ private:
      */
     uint8_t GetStatus();
 
+    /**
+     * @brief Trigger measurement from sensor
+     *
+     * Will abort if there is a failure to communicate with the sensor
+     *
+     * @return esp_err_t
+     */
+    esp_err_t TriggerMeasure();
+
 public:
     /**
      * @brief Initialize sensor
@@ -83,6 +97,9 @@ public:
 
     /**
      * @brief Get the current measurement from the sensor
+     *
+     * If called whilst a measurement is already running will wait for
+     * previous measurement to finish and use results from that instead.
      *
      * @param result Struct to store result in
      * @return esp_err_t
