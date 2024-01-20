@@ -13,6 +13,7 @@
 #include "wlan.hpp"
 #include "config/uart.hpp"
 #include "sensor/aht10.hpp"
+#include "webserver/server.hpp"
 
 #define SPIFFS_MAX_FILES 4
 
@@ -118,9 +119,7 @@ extern "C" void app_main() {
     xTaskCreate(uart_task, "uart_listen", 2048, &sensor, 10, NULL);
 
     network_init();
-
-    aht10_measurement_t res = {};
-    sensor.Measure(&res);
-
-
+    // Server server = Server(80, &sensor);
+    webserver_start(80, &sensor);
+    // server.Listen();
 }
