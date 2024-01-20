@@ -18,7 +18,7 @@ menu "Temperature Sensor Config"
         prompt "mDNS Hostname"
         help
             Hostname to use for mDNS
-    config MDNS_INTANCE_NAME
+    config MDNS_INSTANCE_NAME
         string
         default "Temperature Sensor"
         prompt "mDNS Instance name"

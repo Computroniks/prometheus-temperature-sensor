@@ -14,8 +14,7 @@
 #include "driver/i2c.h"
 #include "driver/gpio.h"
 
-esp_err_t AHT10::Read(uint8_t *data, size_t len)
-{
+esp_err_t AHT10::Read(uint8_t* data, size_t len) {
     ESP_LOGD(TAG_, "Reading from AHT10 at address %x", addr_);
 
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -31,8 +30,7 @@ esp_err_t AHT10::Read(uint8_t *data, size_t len)
     return ret;
 }
 
-esp_err_t AHT10::Write(uint8_t *data, size_t len)
-{
+esp_err_t AHT10::Write(uint8_t* data, size_t len) {
     ESP_LOGD(TAG_, "Writing to AHT10 at address %x", addr_);
 
     i2c_cmd_handle_t cmd = i2c_cmd_link_create();
@@ -49,16 +47,13 @@ esp_err_t AHT10::Write(uint8_t *data, size_t len)
     return ret;
 }
 
-void AHT10::CheckResponseCode(esp_err_t code)
-{
-    if (code != ESP_OK)
-    {
+void AHT10::CheckResponseCode(esp_err_t code) {
+    if (code != ESP_OK) {
         ESP_LOGW(TAG_, "Response code was not ESP_OK, got %s", esp_err_to_name(code));
     }
 }
 
-esp_err_t AHT10::Init()
-{
+esp_err_t AHT10::Init() {
     // 20ms to allow power up
     vTaskDelay(20 / portTICK_PERIOD_MS);
 
@@ -67,9 +62,8 @@ esp_err_t AHT10::Init()
     cmd[0] = AHT10_CMD_SOFTRESET;
     ESP_ERROR_CHECK(Write(cmd, 1))
 
-    vTaskDelay(20 / portTICK_PERIOD_MS);
-    while (GetStatus() & AHT10_STATUS_BUSY)
-    {
+        vTaskDelay(20 / portTICK_PERIOD_MS);
+    while (GetStatus() & AHT10_STATUS_BUSY) {
         vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 
@@ -79,8 +73,7 @@ esp_err_t AHT10::Init()
     cmd[2] = 0x00;
     ESP_ERROR_CHECK(Write(cmd, 3));
 
-    if (!(GetStatus() & AHT10_STATUS_CALIBRATED))
-    {
+    if (!(GetStatus() & AHT10_STATUS_CALIBRATED)) {
         ESP_LOGE(TAG_, "Failed to calibrate sensor");
         return ESP_FAIL;
     }
@@ -89,15 +82,13 @@ esp_err_t AHT10::Init()
     return ESP_OK;
 }
 
-uint8_t AHT10::GetStatus()
-{
+uint8_t AHT10::GetStatus() {
     uint8_t ret;
     ESP_ERROR_CHECK(Read(&ret, 1));
     return ret;
 }
 
-AHT10::AHT10(gpio_num_t scl, gpio_num_t sda, i2c_port_t port, uint8_t addr)
-{
+AHT10::AHT10(gpio_num_t scl, gpio_num_t sda, i2c_port_t port, uint8_t addr) {
     port_ = port;
     addr_ = addr;
 
@@ -117,15 +108,13 @@ AHT10::AHT10(gpio_num_t scl, gpio_num_t sda, i2c_port_t port, uint8_t addr)
     ESP_LOGD(TAG_, "Setup I2C for AHT10. SCL: %d SDA: %d", scl, sda);
 }
 
-esp_err_t AHT10::Measure(aht10_measurement_t *result)
-{
+esp_err_t AHT10::Measure(aht10_measurement_t* result) {
     ESP_LOGD(TAG_, "Triggering read");
-    uint8_t cmd[3] = {AHT10_CMD_TRIGGER, 0x33, 0x00};
+    uint8_t cmd[3] = { AHT10_CMD_TRIGGER, 0x33, 0x00 };
     ESP_ERROR_CHECK(Write(cmd, 3));
 
     // Wait for the result to be ready
-    while (GetStatus() & AHT10_STATUS_BUSY)
-    {
+    while (GetStatus() & AHT10_STATUS_BUSY) {
         vTaskDelay(10 / portTICK_PERIOD_MS);
     }
 

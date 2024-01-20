@@ -13,21 +13,18 @@
 #define AHT10_STATUS_BUSY 0x80
 #define AHT10_STATUS_CALIBRATED 0x08
 
-typedef enum
-{
+typedef enum {
     AHT10_CMD_CALIBRATE = 0xE1,
     AHT10_CMD_TRIGGER = 0xAC,
     AHT10_CMD_SOFTRESET = 0xBA,
 } aht10_command_t;
 
-struct aht10_measurement_t
-{
+struct aht10_measurement_t {
     float temperature;
     float humidity;
 };
 
-class AHT10
-{
+class AHT10 {
 private:
     const char TAG_[6] = "AHT10";
 
@@ -42,7 +39,7 @@ private:
      * @param len Length of data to read
      * @return esp_err_t
      */
-    esp_err_t Read(uint8_t *data, size_t len);
+    esp_err_t Read(uint8_t* data, size_t len);
 
     /**
      * @brief Write data to AHT10
@@ -52,7 +49,7 @@ private:
      * @param len Length of data being sent
      * @return esp_err_t
      */
-    esp_err_t Write(uint8_t *data, size_t len);
+    esp_err_t Write(uint8_t* data, size_t len);
 
     /**
      * @brief Check response code is ESP_OK. If not log warning
@@ -90,7 +87,7 @@ public:
      * @param result Struct to store result in
      * @return esp_err_t
      */
-    esp_err_t Measure(aht10_measurement_t *result);
+    esp_err_t Measure(aht10_measurement_t* result);
 };
 
 #endif // SENSOR_AHT10_H_

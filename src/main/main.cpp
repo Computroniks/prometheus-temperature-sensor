@@ -16,10 +16,9 @@
 
 #define SPIFFS_MAX_FILES 4
 
-static const char *TAG_ = "main";
+static const char* TAG_ = "main";
 
-void show_startup_info()
-{
+void show_startup_info() {
     // Firmware info
     ESP_LOGI(TAG_, "%s %s", PROJECT_NAME, PROJECT_VERSION);
     ESP_LOGI(TAG_, "Compiled %s %s", __DATE__, __TIME__);
@@ -64,8 +63,7 @@ void show_startup_info()
         (chip.features & CHIP_FEATURE_EMB_FLASH) ? "embedded" : "external");
 }
 
-esp_err_t init_spiffs()
-{
+esp_err_t init_spiffs() {
     ESP_LOGI(TAG_, "Initialising SPIFFS file system");
 
     esp_vfs_spiffs_conf_t conf = {
@@ -76,10 +74,8 @@ esp_err_t init_spiffs()
     };
 
     esp_err_t ret = esp_vfs_spiffs_register(&conf);
-    if (ret != ESP_OK)
-    {
-        switch (ret)
-        {
+    if (ret != ESP_OK) {
+        switch (ret) {
         case ESP_FAIL:
             ESP_LOGE(TAG_, "ESP_FAIL: Failed to mount or format file system");
             break;
@@ -95,8 +91,7 @@ esp_err_t init_spiffs()
 
     size_t total = 0, used = 0;
     ret = esp_spiffs_info(NULL, &total, &used);
-    if (ret != ESP_OK)
-    {
+    if (ret != ESP_OK) {
         ESP_LOGE(TAG_, "Failed to get SPIFFS partition information (%s)", esp_err_to_name(ret));
         return ret;
     }
@@ -108,14 +103,12 @@ esp_err_t init_spiffs()
     return ESP_OK;
 }
 
-void uart_task(void *arg)
-{
+void uart_task(void* arg) {
     UART uart = UART(74800);
     uart.Listen();
 }
 
-extern "C" void app_main()
-{
+extern "C" void app_main() {
     show_startup_info();
     init_spiffs();
     Config config = Config();

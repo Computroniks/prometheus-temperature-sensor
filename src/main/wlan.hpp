@@ -12,28 +12,28 @@ void wifi_init_station();
 // Get the SSID for the softAP
 // Use the prefix PROV_ followed by the last three chunks of the
 // devices MAC address
-void wifi_get_ssid(char *ssid, int max_len);
+void wifi_get_ssid(char* ssid, int max_len);
 
 // Handler for WiFi provisioning system events
 void event_handler_wifi_prov(
-    void *arg,
+    void* arg,
     esp_event_base_t base,
     int id,
-    void *data);
+    void* data);
 
 // Handler for WiFi system events
 void event_handler_wifi(
-    void *arg,
+    void* arg,
     esp_event_base_t base,
     int id,
-    void *data);
+    void* data);
 
 // Handler for IP system events
 void event_handler_ip(
-    void *arg,
+    void* arg,
     esp_event_base_t base,
     int id,
-    void *data);
+    void* data);
 
 // Create event loop and register events
 void wifi_init_events();

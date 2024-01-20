@@ -14,42 +14,35 @@
 #include "config/uart.hpp"
 #include "config/config.hpp"
 
-void UART::Reset()
-{
+void UART::Reset() {
     esp_restart();
 }
 
-uart_err_t UART::SetWiFiSSID()
-{
+uart_err_t UART::SetWiFiSSID() {
     char ssid[33] = "";
     int i = 0;
 
     bool data = true;
-    while (data)
-    {
+    while (data) {
         uint8_t buf[1];
         int len = uart_read_bytes(UART_NUM_0, buf, 1, 20 / portTICK_RATE_MS);
-        if (len < 1)
-        {
+        if (len < 1) {
             ESP_LOGD(TAG_, "Failed to read data from UART buffer");
             return UART_ERR_FAIL;
         }
 
         // Check length of SSID if this is an end of line signal
-        if (buf[0] != 0x00 && i >= 32)
-        {
+        if (buf[0] != 0x00 && i >= 32) {
             // SSID too long
             return UART_ERR_INVALID_VALUE;
         }
 
-        if (buf[0] == 0x00 && i < 2)
-        {
+        if (buf[0] == 0x00 && i < 2) {
             // SSID too short
             return UART_ERR_INVALID_VALUE;
         }
 
-        switch (buf[0])
-        {
+        switch (buf[0]) {
         case 0x00:
             config_.SetWiFiSSID(ssid);
             return UART_ERR_OK;
@@ -65,37 +58,31 @@ uart_err_t UART::SetWiFiSSID()
     return UART_ERR_FAIL;
 }
 
-uart_err_t UART::SetWiFiKey()
-{
+uart_err_t UART::SetWiFiKey() {
     char key[64] = "";
     int i = 0;
 
     bool data = true;
-    while (data)
-    {
+    while (data) {
         uint8_t buf[1];
         int len = uart_read_bytes(UART_NUM_0, buf, 1, 20 / portTICK_RATE_MS);
-        if (len < 1)
-        {
+        if (len < 1) {
             ESP_LOGD(TAG_, "Failed to read data from UART buffer");
             return UART_ERR_FAIL;
         }
 
         // Check length of key if this is an end of line signal
-        if (buf[0] != 0x00 && i >= 63)
-        {
+        if (buf[0] != 0x00 && i >= 63) {
             // Key too long
             return UART_ERR_INVALID_VALUE;
         }
 
-        if (buf[0] == 0x00 && i < 8)
-        {
+        if (buf[0] == 0x00 && i < 8) {
             // Key too short
             return UART_ERR_INVALID_VALUE;
         }
 
-        switch (buf[0])
-        {
+        switch (buf[0]) {
         case 0x00:
             config_.SetWiFiKey(key);
             return UART_ERR_OK;
@@ -111,15 +98,13 @@ uart_err_t UART::SetWiFiKey()
     return UART_ERR_FAIL;
 }
 
-uart_err_t UART::GetWiFiSSID()
-{
+uart_err_t UART::GetWiFiSSID() {
     ESP_LOGD(TAG_, "Fetching Wifi SSID");
     config_wifi_t conf;
     config_.GetWiFi(&conf);
     ESP_LOGD(TAG_, "Fetched config");
 
-    if (conf.type == CONFIG_WIFI_DISABLED)
-    {
+    if (conf.type == CONFIG_WIFI_DISABLED) {
         return UART_ERR_DISABLED;
     }
     uart_write_bytes(UART_NUM_0, conf.ssid, strlen(conf.ssid));
@@ -128,8 +113,7 @@ uart_err_t UART::GetWiFiSSID()
     return UART_ERR_OK;
 }
 
-UART::UART(int baud)
-{
+UART::UART(int baud) {
     uart_config_t conf = {
         .baud_rate = baud,
         .data_bits = UART_DATA_8_BITS,
@@ -142,22 +126,18 @@ UART::UART(int baud)
     ESP_ERROR_CHECK(uart_driver_install(UART_NUM_0, BUF_SIZE * 2, 0, 0, NULL, 0));
 }
 
-void UART::Listen()
-{
+void UART::Listen() {
     uint8_t cmd;
-    while (1)
-    {
+    while (1) {
         // Poll for a command
         int len = uart_read_bytes(UART_NUM_0, &cmd, 1, 20 / portTICK_RATE_MS);
-        if (len == 0)
-        {
+        if (len == 0) {
             continue;
         }
 
-        uart_err_t status[1] = {UART_ERR_OK};
+        uart_err_t status[1] = { UART_ERR_OK };
 
-        switch (cmd)
-        {
+        switch (cmd) {
         case UART_CMD_RESET:
             Reset();
             break;
@@ -179,7 +159,7 @@ void UART::Listen()
             break;
         }
 
-        uart_write_bytes(UART_NUM_0, (const char *)status, 1);
+        uart_write_bytes(UART_NUM_0, (const char*)status, 1);
         cmd = 0;
     }
 }
