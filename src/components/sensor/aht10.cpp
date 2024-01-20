@@ -146,6 +146,7 @@ esp_err_t AHT10::Measure(aht10_measurement_t* result) {
     if (!measurement_active_) {
         measurement_active_ = true;
         TriggerMeasure();
+        measurement_active_ = false;
     }
     else {
         while (measurement_active_) {
