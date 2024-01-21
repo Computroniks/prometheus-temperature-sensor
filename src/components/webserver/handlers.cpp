@@ -9,6 +9,7 @@
 #include "sys/socket.h"
 
 #include "util.hpp"
+#include "sensor/aht10.hpp"
 
 static const char TAG_[] = "webserver_handlers";
 
@@ -27,7 +28,15 @@ esp_err_t webserver_handler_get_metrics(httpd_req_t* req) {
     ESP_LOGI(TAG_, "GET /metrics from IP: %s User-Agent: %s", ipstr, user_agent);
     httpd_resp_set_hdr(req, "Content-Type", "text/plain; version=0.0.4");
 
-    char* resp_buf = webserver_util_format_metrics();
+    aht10_measurement_t measurement;
+    esp_err_t err = webserver_util_get_measurement(&measurement);
+    if (err != ESP_OK) {
+        httpd_resp_send_500(req);
+        ESP_LOGW(TAG_, "HTTP 500 caused by %s", esp_err_to_name(err));
+        return ESP_FAIL;
+    }
+
+    char* resp_buf = webserver_util_format_metrics(&measurement);
     httpd_resp_send(req, resp_buf, strlen(resp_buf));
     free(resp_buf);
     return ESP_OK;

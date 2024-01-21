@@ -27,15 +27,16 @@ esp_err_t webserver_util_get_client_ip(httpd_req_t* req, char ip[INET6_ADDRSTRLE
         return ESP_FAIL;
     }
     else {
-        inet_ntop(AF_INET6, &addr.sin6_addr, ip, sizeof(ip));
+        inet_ntop(AF_INET6, &addr.sin6_addr, ip, INET6_ADDRSTRLEN);
     }
     return ESP_OK;
 }
 
-char* webserver_util_format_metrics() {
-    aht10_measurement_t measurement;
-    sensor_->Measure(&measurement);
+esp_err_t webserver_util_get_measurement(aht10_measurement_t* measurement) {
+    return sensor_->Measure(measurement);
+}
 
+char* webserver_util_format_metrics(aht10_measurement_t* measurement) {
     const char metrics_template[] =
         "# HELP environment_temperature_celsius Current temperature\n"
         "# TYPE environment_temperature_celsius gauge\n"
@@ -58,8 +59,8 @@ char* webserver_util_format_metrics() {
         NULL,
         0,
         metrics_template,
-        measurement.temperature,
-        measurement.humidity,
+        measurement->temperature,
+        measurement->humidity,
         uptime,
         heap
     );
@@ -67,8 +68,8 @@ char* webserver_util_format_metrics() {
     sprintf(
         buf,
         metrics_template,
-        measurement.temperature,
-        measurement.humidity,
+        measurement->temperature,
+        measurement->humidity,
         uptime,
         heap
     );

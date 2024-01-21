@@ -19,11 +19,19 @@
 esp_err_t webserver_util_get_client_ip(httpd_req_t* req, char ip[INET6_ADDRSTRLEN]);
 
 /**
+ * @brief Get sensor measurement
+ *
+ * @param measurement Struct to fill with data.
+ * @return esp_err_t
+ */
+esp_err_t webserver_util_get_measurement(aht10_measurement_t* measurement);
+
+/**
  * @brief Format the metrics string
  *
  * @return char*
  */
-char* webserver_util_format_metrics();
+char* webserver_util_format_metrics(aht10_measurement_t* measurement);
 
 /**
  * @brief Set the sensor for the webserver to use

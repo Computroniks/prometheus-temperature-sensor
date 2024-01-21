@@ -29,6 +29,7 @@ private:
     const char TAG_[6] = "AHT10";
 
     bool measurement_active_ = false;
+    int error_count_ = 0;
     float last_temp_;
     float last_humidity_;
 
@@ -71,9 +72,10 @@ private:
     /**
      * @brief Get the current status of the sensor
      *
-     * @return uint8_t 8 bits of status data
+     * @param status Pointer to where we should store status
+     * @return esp_err_t
      */
-    uint8_t GetStatus();
+    esp_err_t GetStatus(uint8_t* status);
 
     /**
      * @brief Trigger measurement from sensor
